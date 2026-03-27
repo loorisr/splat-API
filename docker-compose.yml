@@ -1,0 +1,13 @@
+services:
+  splat_api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: splat_api
+    volumes:
+      - ~/DEM:/app/DEM
+    ports:
+      - 8080:8080
+    security_opt:
+      - no-new-privileges:true
+    restart: unless-stopped
