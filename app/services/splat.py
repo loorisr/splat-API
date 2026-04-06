@@ -1,9 +1,7 @@
 import logging
 import math
 import os
-import io
 import subprocess
-import json
 import tempfile
 import threading
 import time
@@ -12,9 +10,6 @@ from typing import List, Tuple
 import requests as http
 
 import numpy as np
-import rasterio
-from rasterio.transform import from_bounds
-from PIL import Image
 
 from app.models.CoveragePredictionRequest import CoveragePredictionRequest
 
@@ -242,27 +237,23 @@ class Splat:
                     "-rel", str(request.time_fraction),
                     "-conf", str(request.situation_fraction),
                     "-erp", str(erp_watts), 
-                    
                     "-color", dcf_path,
                     "-rxh", str(request.rx_height),
                     "-rxg", str(request.rx_gain), # not used in calculation
-                    "-m",
                     "-R", str(radius / 1000.0),
-                   # "-sc",
                     "-gc", str(request.clutter_height),
                    # "-ngs", "-N",
                     "-o", "output",
+                    "-geotiff",
                     "-dbm",
                     "-rt", str(request.signal_threshold),
-                    "-copernicus", self.dem_dir,
-                   # "-olditm",
-                    "-ppm",
+                    "-dem", self.dem_dir,
                 ]
                 if request.high_resolution:
                     command.append("-hd")
                 if request.polarization == "horizontal":
                     command.append("-hp") ## default is vertical
-                img_filename = "output.ppm"
+                img_filename = "output.tif"
 
                 report(45)
                 logger.info(f"Running splat: {' '.join(command)}")
@@ -293,26 +284,17 @@ class Splat:
                         f"stdout: {result.stdout}\nstderr: {result.stderr}"
                     )
 
-                # Fall back to any image file if the expected one isn't present
+                # Fall back to any tif file if the expected one isn't present
                 if not os.path.exists(os.path.join(tmpdir, img_filename)):
-                    candidates = [f for f in os.listdir(tmpdir) if f.endswith((".ppm", ".png"))]
+                    candidates = [f for f in os.listdir(tmpdir) if f.endswith(".tif")]
                     logger.info(f"'{img_filename}' not found — tmpdir: {os.listdir(tmpdir)}")
                     if not candidates:
-                        raise RuntimeError(f"No image output found. tmpdir: {os.listdir(tmpdir)}")
+                        raise RuntimeError(f"No GeoTIFF output found. tmpdir: {os.listdir(tmpdir)}")
                     img_filename = candidates[0]
-                    logger.info(f"Using output image: {img_filename}")
+                    logger.info(f"Using output file: {img_filename}")
 
-                with open(os.path.join(tmpdir, img_filename), "rb") as img_f:
-                    img_bytes = img_f.read()
-
-                json_path = os.path.join(tmpdir, "output.json")
-                with open(json_path, "rb") as json_f:
-                    data = json.loads(json_f.read())
-                    north, south, east, west = [float(data['north']), float(data['south']), float(data['east']), float(data['west']),]
-
-                geotiff = Splat._create_splat_geotiff(
-                    img_bytes, north, south, east, west,
-                    request.colormap)
+                with open(os.path.join(tmpdir, img_filename), "rb") as f:
+                    geotiff = f.read()
 
                 report(100)
                 logger.info("Coverage prediction completed.")
@@ -413,67 +395,7 @@ class Splat:
             lines.append(f"{int(val):+4d}: {color[0]:3d}, {color[1]:3d}, {color[2]:3d}\n")
         return "".join(lines).encode()
 
-    @staticmethod
-    def _create_splat_geotiff(
-        img_bytes: bytes,
-        north: float,
-        south: float,
-        east: float,
-        west: float,
-        colormap_name: str,
-        null_value: int = 255,
-    ) -> bytes:
-        """
-        Convert a PPM/PNG image + geographic bounds to a georeferenced GeoTIFF.
-
-        Returns:
-            bytes: LZW-compressed GeoTIFF (EPSG:4326, uint8 palette, nodata=255).
-        """
-        # Read image as grayscale
-        with Image.open(io.BytesIO(img_bytes)) as img:
-            img_array = np.clip(np.array(img.convert("L")), 0, 255).astype("uint8")
-
-        height, width = img_array.shape
-        transform = from_bounds(west, south, east, north, width, height)
-
-        # Build GDAL colormap from our lightweight colormap
-        cmap_rgba = _get_colormap(colormap_name, 255)
-        gdal_colormap = {i: (int(cmap_rgba[i, 0]), int(cmap_rgba[i, 1]), int(cmap_rgba[i, 2]), 255)
-                         for i in range(255)}
-
-        # Write GeoTIFF to memory
-        buf = io.BytesIO()
-        with rasterio.open(
-            buf, "w",
-            driver="GTiff",
-            height=height, width=width,
-            count=1, dtype="uint8",
-            crs="EPSG:4326", transform=transform,
-            photometric="palette", compress="lzw",
-            nodata=null_value,
-        ) as dst:
-            dst.write(img_array, 1)
-            dst.write_colormap(1, gdal_colormap)
-
-        buf.seek(0)
-        return buf.read()
-
 
 if __name__ == "__main__":
     logging.basicConfig(level=logging.DEBUG)
     splat_service = Splat(splat_path=".")
-    test_request = CoveragePredictionRequest(
-        lat=45.5, lon=6.0,
-        tx_height=1.0, ground_dielectric=15.0, ground_conductivity=0.005,
-        atmosphere_bending=301.0, frequency_mhz=868.0,
-        radio_climate="continental_temperate", polarization="vertical",
-        situation_fraction=95.0, time_fraction=95.0,
-        tx_power=30.0, tx_gain=1.0, system_loss=2.0,
-        rx_height=1.0, radius=50000.0, colormap="CMRmap",
-        min_dbm=-130.0, max_dbm=-80.0, signal_threshold=-130.0,
-        high_resolution=False,
-    )
-    result = splat_service.coverage_prediction(test_request)
-    with open("splat_output.tif", "wb") as f:
-        f.write(result)
-    logger.info("Saved splat_output.tif")
