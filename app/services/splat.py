@@ -17,109 +17,6 @@ from app.models.CoveragePredictionRequest import CoveragePredictionRequest
 logger = logging.getLogger(__name__)
 logging.getLogger("urllib3").setLevel(logging.WARNING)
 
-
-# ---------------------------------------------------------------------------
-# Lightweight colormap implementation (replaces matplotlib)
-# ---------------------------------------------------------------------------
-# Each entry: list of (t, R, G, B) keypoints, t ∈ [0, 1], RGB ∈ [0, 255]
-_COLORMAP_KEYS: dict[str, list] = {
-    "viridis": [
-        (0.000,  68,   1,  84),
-        (0.125,  71,  44, 122),
-        (0.250,  59,  82, 139),
-        (0.375,  44, 114, 142),
-        (0.500,  33, 145, 140),
-        (0.625,  53, 183, 121),
-        (0.750,  94, 201,  98),
-        (0.875, 160, 218,  57),
-        (1.000, 253, 231,  37),
-    ],
-    "plasma": [
-        (0.000,  13,   8, 135),
-        (0.250, 126,   3, 168),
-        (0.500, 203,  70, 121),
-        (0.750, 248, 149,  64),
-        (1.000, 240, 249,  33),
-    ],
-    "hot": [
-        (0.000,   0,   0,   0),
-        (0.333, 255,   0,   0),
-        (0.667, 255, 255,   0),
-        (1.000, 255, 255, 255),
-    ],
-    "cool": [
-        (0.0,   0, 255, 255),
-        (1.0, 255,   0, 255),
-    ],
-    "jet": [
-        (0.000,   0,   0, 143),
-        (0.125,   0,   0, 255),
-        (0.375,   0, 255, 255),
-        (0.625, 255, 255,   0),
-        (0.875, 255,   0,   0),
-        (1.000, 127,   0,   0),
-    ],
-    "rainbow": [
-        (0.000, 127,   0, 255),
-        (0.200,   0,   0, 255),
-        (0.400,   0, 255, 255),
-        (0.600,   0, 255,   0),
-        (0.800, 255, 255,   0),
-        (1.000, 255,   0,   0),
-    ],
-    "turbo": [
-        (0.00,  48,  18,  59),
-        (0.10,  70,  50, 127),
-        (0.20,  56, 101, 191),
-        (0.30,  34, 149, 202),
-        (0.40,  35, 193, 168),
-        (0.50,  82, 213, 118),
-        (0.60, 149, 225,  54),
-        (0.70, 213, 210,  46),
-        (0.80, 247, 163,  42),
-        (0.90, 239,  91,  30),
-        (1.00, 122,   4,   3),
-    ],
-    "CMRmap": [
-        (0.000,   0,   0,   0),
-        (0.150,  20,  20,  80),
-        (0.300,   0, 100, 200),
-        (0.450,   0, 200, 200),
-        (0.550, 200, 200,   0),
-        (0.700, 250, 150,   0),
-        (0.850, 250,  50,   0),
-        (1.000, 255, 255, 255),
-    ],
-}
-# Aliases
-_COLORMAP_KEYS["hsv"] = _COLORMAP_KEYS["rainbow"]
-
-
-def _get_colormap(name: str, n: int = 256) -> np.ndarray:
-    """
-    Return an (n, 4) uint8 RGBA array for the named colormap.
-    Falls back to 'viridis' for unknown names.
-    """
-    keys = _COLORMAP_KEYS.get(name, _COLORMAP_KEYS["viridis"])
-    t_vals = np.linspace(0.0, 1.0, n)
-    t_keys = [k[0] for k in keys]
-    out = np.zeros((n, 4), dtype=np.uint8)
-    for ch, col_idx in enumerate([1, 2, 3]):  # R, G, B
-        channel_vals = [k[col_idx] for k in keys]
-        out[:, ch] = np.clip(np.interp(t_vals, t_keys, channel_vals), 0, 255).astype(np.uint8)
-    out[:, 3] = 255  # full alpha
-    return out
-
-
-def _apply_colormap(values: np.ndarray, name: str, vmin: float, vmax: float) -> np.ndarray:
-    """Map a 1-D float array to (N, 4) uint8 RGBA using the named colormap."""
-    cmap = _get_colormap(name, 255)
-    indices = np.clip(
-        ((values - vmin) / (vmax - vmin) * 254).astype(int), 0, 254
-    )
-    return cmap[indices]
-
-
 class Splat:
     def __init__(
         self,
@@ -203,14 +100,6 @@ class Splat:
                     # tiles: 0 → 40%
                     report(int(40 * (i + 1) / n))
 
-                dcf_path = os.path.join(tmpdir, "splat.dcf")
-                with open(dcf_path, "wb") as f:
-                    f.write(Splat._create_splat_dcf(
-                        colormap_name=request.colormap,
-                        min_dbm=request.min_dbm,
-                        max_dbm=request.max_dbm,
-                    ))
-
                 climate_map = {
                     "equatorial": 1,
                     "continental_subtropical": 2,
@@ -237,7 +126,7 @@ class Splat:
                     "-rel", str(request.time_fraction),
                     "-conf", str(request.situation_fraction),
                     "-erp", str(erp_watts), 
-                    "-color", dcf_path,
+                    "-color", str(request.colormap),
                     "-rxh", str(request.rx_height),
                     "-rxg", str(request.rx_gain), # not used in calculation
                     "-R", str(radius / 1000.0),
@@ -380,21 +269,6 @@ class Splat:
             f.write(tile_data)
         logger.info(f"Stored {copernicus_filename} in {self.dem_dir}")
         return copernicus_path
-
-    # ------------------------------------------------------------------
-    # SPLAT! config file generators
-    # ------------------------------------------------------------------
-
-    @staticmethod
-    def _create_splat_dcf(colormap_name: str, min_dbm: float, max_dbm: float) -> bytes:
-        """Generate a SPLAT! .dcf signal level color definition file (32 levels)."""
-        dbm_values = np.linspace(max_dbm, min_dbm, 32)
-        rgb = _apply_colormap(dbm_values, colormap_name, min_dbm, max_dbm)
-        lines = ["; SPLAT! Signal Level Color Definition\n;\n; dBm: R, G, B\n;\n"]
-        for val, color in zip(dbm_values, rgb):
-            lines.append(f"{int(val):+4d}: {color[0]:3d}, {color[1]:3d}, {color[2]:3d}\n")
-        return "".join(lines).encode()
-
 
 if __name__ == "__main__":
     logging.basicConfig(level=logging.DEBUG)
