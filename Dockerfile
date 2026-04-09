@@ -12,12 +12,12 @@ WORKDIR /app
 # Install uv and Python dependencies
 COPY --from=ghcr.io/astral-sh/uv:latest /uv /usr/local/bin/uv
 
-COPY pyproject.toml .
+COPY pyproject.toml uv.lock .
 # Disable development dependencies
 ENV UV_NO_DEV=1
 ENV UV_COMPILE_BYTECODE=1
 
-RUN uv sync
+RUN uv sync --frozen
 
 # Copy application files
 COPY . .

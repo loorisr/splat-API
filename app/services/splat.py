@@ -18,6 +18,16 @@ logger = logging.getLogger(__name__)
 logging.getLogger("urllib3").setLevel(logging.WARNING)
 
 class Splat:
+    _CLIMATE_MAP = {
+        "equatorial": 1,
+        "continental_subtropical": 2,
+        "maritime_subtropical": 3,
+        "desert": 4,
+        "continental_temperate": 5,
+        "maritime_temperate_land": 6,
+        "maritime_temperate_sea": 7,
+    }
+
     def __init__(
         self,
         splat_path: str,
@@ -59,6 +69,8 @@ class Splat:
         self.bucket_prefix = bucket_prefix
         self._semaphore = threading.Semaphore(max_concurrent_jobs)
         self._job_timeout = job_timeout
+        self._dem_locks: dict[str, threading.Lock] = {}
+        self._dem_locks_lock = threading.Lock()
 
         logger.info(
             f"Initialized SPLAT! — dem_dir: '{dem_dir}', "
@@ -95,23 +107,13 @@ class Splat:
                 )
                 n = len(required_tiles)
 
-                for i, (copernicus) in enumerate(required_tiles):
+                for i, copernicus in enumerate(required_tiles):
                     sdf_path = self._ensure_dem(copernicus, high_resolution=request.high_resolution)
                     # tiles: 0 → 40%
                     report(int(40 * (i + 1) / n))
 
-                climate_map = {
-                    "equatorial": 1,
-                    "continental_subtropical": 2,
-                    "maritime_subtropical": 3,
-                    "desert": 4,
-                    "continental_temperate": 5,
-                    "maritime_temperate_land": 6,
-                    "maritime_temperate_sea": 7,
-                }
-
                 # expected : erp: Tx Total Effective Radiated Power in Watts (dBd) inc Tx+Rx gain. 2.14dBi = 0dBd\n");
-                erp_watts = 10 ** ((request.tx_power + request.tx_gain - request.system_loss - 30) / 10)  
+                erp_watts = 10 ** ((request.tx_power + request.tx_gain - request.system_loss - 30) / 10)
 
                 binary = self.splat_binary
                 command = [
@@ -119,7 +121,7 @@ class Splat:
                     "-lat", str(request.lat),
                     "-lon", str(request.lon),
                     "-txh", str(request.tx_height),
-                    "-cl", str(climate_map[request.radio_climate]),
+                    "-cl", str(self._CLIMATE_MAP[request.radio_climate]),
                     "-terdic", str(request.ground_dielectric),
                     "-tercon", str(request.ground_conductivity),
                     "-f", str(request.frequency_mhz),
@@ -227,7 +229,7 @@ class Splat:
         for lat_tile in range(lat_min, lat_max + 1):
             for lon_tile in range(lon_min, lon_max + 1):
                 copernicus = Splat._copernicus_filename(lat_tile, lon_tile, high_resolution)
-                tiles.append((copernicus))
+                tiles.append(copernicus)
 
         logger.debug(f"Required tiles: {tiles}")
         return tiles
@@ -245,30 +247,41 @@ class Splat:
             logger.info(f"DEM hit: {copernicus_filename}")
             return copernicus_path
 
-        # Download Copernicus tif tile
-        tile_dir = tile_name[:-4] # remove .tif
+        with self._dem_locks_lock:
+            if tile_name not in self._dem_locks:
+                self._dem_locks[tile_name] = threading.Lock()
+            tile_lock = self._dem_locks[tile_name]
 
-        if high_resolution: 
-            base_url = f"https://{self.bucket_name_high_resolution}.s3.amazonaws.com"
-            logger.info(f"high: {base_url}")
-        else:
-            base_url = f"https://{self.bucket_name}.s3.amazonaws.com"
-            logger.info(f"low: {base_url}")
-        tile_data = None
-        url = f"{base_url}/{tile_dir}/{tile_name}"
-        logger.info(f"Downloading {url}")
-        resp = http.get(url, timeout=60)
-        if resp.status_code == 200:
-            tile_data = resp.content
-        if resp.status_code != 404:
-            resp.raise_for_status()
-        if tile_data is None:
-            raise FileNotFoundError(f"Terrain tile '{tile_name}' not found in S3.")
+        with tile_lock:
+            # Re-check after acquiring the lock — another thread may have downloaded it
+            if os.path.exists(copernicus_path):
+                logger.info(f"DEM hit (after lock): {copernicus_filename}")
+                return copernicus_path
 
-        with open(copernicus_path, "wb") as f:
-            f.write(tile_data)
-        logger.info(f"Stored {copernicus_filename} in {self.dem_dir}")
-        return copernicus_path
+            # Download Copernicus tif tile
+            tile_dir = tile_name[:-4] # remove .tif
+
+            if high_resolution:
+                base_url = f"https://{self.bucket_name_high_resolution}.s3.amazonaws.com"
+                logger.info(f"high: {base_url}")
+            else:
+                base_url = f"https://{self.bucket_name}.s3.amazonaws.com"
+                logger.info(f"low: {base_url}")
+            tile_data = None
+            url = f"{base_url}/{tile_dir}/{tile_name}"
+            logger.info(f"Downloading {url}")
+            resp = http.get(url, timeout=60)
+            if resp.status_code == 200:
+                tile_data = resp.content
+            if resp.status_code != 404:
+                resp.raise_for_status()
+            if tile_data is None:
+                raise FileNotFoundError(f"Terrain tile '{tile_name}' not found in S3.")
+
+            with open(copernicus_path, "wb") as f:
+                f.write(tile_data)
+            logger.info(f"Stored {copernicus_filename} in {self.dem_dir}")
+            return copernicus_path
 
 if __name__ == "__main__":
     logging.basicConfig(level=logging.DEBUG)

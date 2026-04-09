@@ -12,7 +12,8 @@ Endpoints:
 
 import os
 import threading
-from datetime import datetime, timedelta
+import time
+from datetime import datetime, timedelta, timezone
 from fastapi import FastAPI, BackgroundTasks
 from fastapi.responses import JSONResponse, StreamingResponse
 from fastapi.middleware.cors import CORSMiddleware
@@ -33,7 +34,7 @@ TASK_TTL_SECONDS = 300
 
 def _store_set(key: str, value) -> None:
     with _store_lock:
-        _task_store[key] = {"value": value, "expires": datetime.utcnow() + timedelta(seconds=TASK_TTL_SECONDS)}
+        _task_store[key] = {"value": value, "expires": datetime.now(timezone.utc) + timedelta(seconds=TASK_TTL_SECONDS)}
 
 
 def _store_get(key: str):
@@ -41,10 +42,25 @@ def _store_get(key: str):
         entry = _task_store.get(key)
         if entry is None:
             return None
-        if datetime.utcnow() > entry["expires"]:
+        if datetime.now(timezone.utc) > entry["expires"]:
             del _task_store[key]
             return None
         return entry["value"]
+
+
+def _cleanup_expired():
+    """Background thread that purges expired task store entries every 60 s."""
+    while True:
+        time.sleep(60)
+        now = datetime.now(timezone.utc)
+        with _store_lock:
+            expired = [k for k, v in _task_store.items() if now > v["expires"]]
+            for k in expired:
+                del _task_store[k]
+        if expired:
+            logger.debug(f"Task store cleanup: removed {len(expired)} expired entries.")
+
+threading.Thread(target=_cleanup_expired, daemon=True, name="task-store-cleanup").start()
 
 # Initialize RF prediction service — binaries are in /app (project root in Docker)
 splat_service = Splat(splat_path="/app", dem_dir="/app/DEM")
