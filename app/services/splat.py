@@ -9,8 +9,6 @@ from typing import List, Tuple
 
 import requests as http
 
-import numpy as np
-
 from app.models.CoveragePredictionRequest import CoveragePredictionRequest
 
 
