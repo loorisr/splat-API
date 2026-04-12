@@ -10,7 +10,7 @@ It is based on [Meshtastic Site Planner](https://github.com/meshtastic/meshtasti
 - **GeoTIFF Output**: Returns coverage maps as standard GeoTIFF files
 - **ITWOM v3.0 Model**: Uses the ITWOM for accurate signal propagation
 - **Automatic Terrain Data**: Downloads and caches DEM (Digital Elevation Model) data from AWS Open Data
-- **Multiple Colormaps**: Support for various visualization colormaps (viridis, plasma, hot, cool, jet, rainbow, turbo, CMRmap)
+- **Multiple Colormaps**: Support for various visualization colormaps (heat, jet, turbo, viridis, magma, plasma, inferno, hot, parula, gray, hsv, cubehelix, cividis, github)
 - **RESTful API**: Simple HTTP endpoints for integration
 - **Docker Support**: Easy deployment with Docker and Docker Compose
 
@@ -49,7 +49,7 @@ Start a new coverage prediction task.
   "radio_climate": "continental_temperate",
   "polarization": "vertical",
   "situation_fraction": 50.0,
-  "colormap": "viridis",
+  "colormap": "heat",
   "high_resolution": False
 }
 ```
@@ -109,7 +109,7 @@ Download the GeoTIFF result for a completed task.
 - `situation_fraction` (float): Percentage of locations where prediction is valid (1-100, default: 50)
 
 ### Visualization
-- `colormap` (string): Colormap for visualization: "viridis", "plasma", "hot", "cool", "jet", "rainbow", "turbo", "CMRmap"
+- `colormap` (string): Colormap for visualization: "heat" (default), "jet", "turbo", "viridis", "magma", "plasma", "inferno", "hot", "parula", "gray", "hsv", "cubehelix", "cividis", "github"
 - `high_resolution` (boolean): Use high resolution (30m) instead of standard (90m). Calculation are 9 times slower (default: False)
 
 ## Quick Start
@@ -170,12 +170,6 @@ Digital Elevation Model (DEM) data is automatically downloaded from AWS Open Dat
 - Progress tracking via callback system
 - Thread-safe operations with locking
 
-### GeoTIFF Generation
-- Coverage predictions are converted to GeoTIFF format
-- Proper georeferencing with bounds and coordinate system
-- Colormap application for visualization
-- Rasterio library for GeoTIFF creation
-
 ## Configuration
 
 ### Environment Variables
@@ -193,8 +187,11 @@ Digital Elevation Model (DEM) data is automatically downloaded from AWS Open Dat
 ## Limitations
 
 - In-memory task store (not persistent across restarts)
-- DEM downloads can be slow for first-time locations
 - Maximum prediction radius of 100 km
+
+## Todo
+
+- Use in memory transfer between signal server and python (/vsimem/ with GDAL)
 
 ## Acknowledgments
 

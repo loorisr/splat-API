@@ -1,7 +1,7 @@
 from pydantic import BaseModel, Field
 from typing import Optional, Literal
 
-AVAILABLE_COLORMAPS = ("viridis", "plasma", "hot", "cool", "jet", "rainbow", "turbo", "CMRmap")
+AVAILABLE_COLORMAPS = ("heat", "jet", "turbo", "viridis", "magma", "plasma", "inferno", "hot", "parula", "gray", "hsv", "cubehelix", "cividis", "github")
 
 
 class CoveragePredictionRequest(BaseModel):
@@ -88,7 +88,7 @@ class CoveragePredictionRequest(BaseModel):
 
     # Output Settings
     colormap: Literal[tuple(AVAILABLE_COLORMAPS)] = Field(
-        "rainbow",
+        "heat",
         description=f"Matplotlib colormap to use. Available options: {', '.join(AVAILABLE_COLORMAPS)}",
     )
     min_dbm: float = Field(

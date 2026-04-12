@@ -2,18 +2,17 @@ import logging
 import math
 import os
 import subprocess
-import tempfile
 import threading
 import time
-from typing import List, Tuple
+import uuid
+from typing import List
 
-import requests as http
+import httpx
 
 from app.models.CoveragePredictionRequest import CoveragePredictionRequest
 
 
 logger = logging.getLogger(__name__)
-logging.getLogger("urllib3").setLevel(logging.WARNING)
 
 class Splat:
     _CLIMATE_MAP = {
@@ -32,7 +31,6 @@ class Splat:
         dem_dir: str = ".splat_dem",
         bucket_name: str = "copernicus-dem-90m",
         bucket_name_high_resolution: str = "copernicus-dem-30m",
-        bucket_prefix: str = "",
         max_concurrent_jobs: int = 1,
         job_timeout: int = 120,
     ):
@@ -64,7 +62,6 @@ class Splat:
         self.dem_dir = dem_dir
         self.bucket_name = bucket_name
         self.bucket_name_high_resolution = bucket_name_high_resolution
-        self.bucket_prefix = bucket_prefix
         self._semaphore = threading.Semaphore(max_concurrent_jobs)
         self._job_timeout = job_timeout
         self._dem_locks: dict[str, threading.Lock] = {}
@@ -94,111 +91,110 @@ class Splat:
             if progress_callback:
                 progress_callback(pct)
 
-        with tempfile.TemporaryDirectory() as tmpdir:
-            try:
-                radius = min(request.radius, 100000)
-                if radius != request.radius:
-                    logger.debug(f"Capping radius from {request.radius} m to 100 km.")
+        job_id = uuid.uuid4().hex
+        output_base = os.path.join(self.dem_dir, job_id)
+        img_path = output_base + ".tif"
 
-                required_tiles = Splat._calculate_required_terrain_tiles(
-                    request.lat, request.lon, radius, high_resolution=request.high_resolution
-                )
-                n = len(required_tiles)
+        try:
+            radius = min(request.radius, 100000)
+            if radius != request.radius:
+                logger.debug(f"Capping radius from {request.radius} m to 100 km.")
 
-                for i, copernicus in enumerate(required_tiles):
-                    sdf_path = self._ensure_dem(copernicus, high_resolution=request.high_resolution)
-                    # tiles: 0 → 40%
-                    report(int(40 * (i + 1) / n))
+            required_tiles = Splat._calculate_required_terrain_tiles(
+                request.lat, request.lon, radius, high_resolution=request.high_resolution
+            )
+            n = len(required_tiles)
 
-                # expected : erp: Tx Total Effective Radiated Power in Watts (dBd) inc Tx+Rx gain. 2.14dBi = 0dBd\n");
-                erp_watts = 10 ** ((request.tx_power + request.tx_gain - request.system_loss - 30) / 10)
+            for i, copernicus in enumerate(required_tiles):
+                self._ensure_dem(copernicus, high_resolution=request.high_resolution)
+                # tiles: 0 → 40%
+                report(int(40 * (i + 1) / n))
 
-                binary = self.splat_binary
-                command = [
-                    binary,
-                    "-lat", str(request.lat),
-                    "-lon", str(request.lon),
-                    "-txh", str(request.tx_height),
-                    "-cl", str(self._CLIMATE_MAP[request.radio_climate]),
-                    "-terdic", str(request.ground_dielectric),
-                    "-tercon", str(request.ground_conductivity),
-                    "-f", str(request.frequency_mhz),
-                    "-rel", str(request.time_fraction),
-                    "-conf", str(request.situation_fraction),
-                    "-erp", str(erp_watts), 
-                    "-color", str(request.colormap),
-                    "-rxh", str(request.rx_height),
-                    "-rxg", str(request.rx_gain), # not used in calculation
-                    "-R", str(radius / 1000.0),
-                    "-gc", str(request.clutter_height),
-                   # "-ngs", "-N",
-                    "-o", "output",
-                    "-geotiff",
-                    "-dbm",
-                    "-rt", str(request.signal_threshold),
-                    "-dem", self.dem_dir,
-                ]
-                if request.high_resolution:
-                    command.append("-hd")
-                if request.polarization == "horizontal":
-                    command.append("-hp") ## default is vertical
-                img_filename = "output.tif"
+            # expected : erp: Tx Total Effective Radiated Power in Watts (dBd) inc Tx+Rx gain. 2.14dBi = 0dBd\n");
+            erp_watts = 10 ** ((request.tx_power + request.tx_gain - request.system_loss - 30) / 10)
 
-                report(45)
-                logger.info(f"Running splat: {' '.join(command)}")
+            binary = self.splat_binary
+            command = [
+                binary,
+                "-lat", str(request.lat),
+                "-lon", str(request.lon),
+                "-txh", str(request.tx_height),
+                "-cl", str(self._CLIMATE_MAP[request.radio_climate]),
+                "-terdic", str(request.ground_dielectric),
+                "-tercon", str(request.ground_conductivity),
+                "-f", str(request.frequency_mhz),
+                "-rel", str(request.time_fraction),
+                "-conf", str(request.situation_fraction),
+                "-erp", str(erp_watts),
+                "-color", str(request.colormap),
+                "-rxh", str(request.rx_height),
+                "-rxg", str(request.rx_gain), # not used in calculation
+                "-R", str(radius / 1000.0),
+                "-gc", str(request.clutter_height),
+               # "-ngs", "-N",
+                "-o", output_base,
+                "-geotiff",
+                "-dbm",
+                "-rt", str(request.signal_threshold),
+                "-dem", self.dem_dir,
+            ]
+            if request.high_resolution:
+                command.append("-hd")
+            if request.polarization == "horizontal":
+                command.append("-hp") ## default is vertical
 
-                with self._semaphore:
-                    t0 = time.monotonic()
-                    try:
-                        result = subprocess.run(
-                            command, cwd=tmpdir,
-                            capture_output=True, text=True,
-                            check=False, timeout=self._job_timeout,
-                        )
-                    except subprocess.TimeoutExpired:
-                        raise RuntimeError(
-                            f"splat timed out after {self._job_timeout}s"
-                        )
-                    elapsed = time.monotonic() - t0
-                    logger.info(f"splat finished in {elapsed:.1f}s")
-                    report(90)
+            report(45)
+            logger.info(f"Running splat: {' '.join(command)}")
 
-                logger.info(f"splat stdout:\n{result.stdout}")
-                if result.stderr:
-                    logger.info(f"splat stderr:\n{result.stderr}")
-
-                if result.returncode != 0:
-                    raise RuntimeError(
-                        f"splat failed (rc={result.returncode})\n"
-                        f"stdout: {result.stdout}\nstderr: {result.stderr}"
+            with self._semaphore:
+                t0 = time.monotonic()
+                try:
+                    result = subprocess.run(
+                        command,
+                        capture_output=True, text=True,
+                        check=False, timeout=self._job_timeout,
                     )
+                except subprocess.TimeoutExpired:
+                    raise RuntimeError(
+                        f"splat timed out after {self._job_timeout}s"
+                    )
+                elapsed = time.monotonic() - t0
+                logger.info(f"splat finished in {elapsed:.1f}s")
+                report(90)
 
-                # Fall back to any tif file if the expected one isn't present
-                if not os.path.exists(os.path.join(tmpdir, img_filename)):
-                    candidates = [f for f in os.listdir(tmpdir) if f.endswith(".tif")]
-                    logger.info(f"'{img_filename}' not found — tmpdir: {os.listdir(tmpdir)}")
-                    if not candidates:
-                        raise RuntimeError(f"No GeoTIFF output found. tmpdir: {os.listdir(tmpdir)}")
-                    img_filename = candidates[0]
-                    logger.info(f"Using output file: {img_filename}")
+            logger.info(f"splat stdout:\n{result.stdout}")
+            if result.stderr:
+                logger.info(f"splat stderr:\n{result.stderr}")
 
-                with open(os.path.join(tmpdir, img_filename), "rb") as f:
-                    geotiff = f.read()
+            if result.returncode != 0:
+                raise RuntimeError(
+                    f"splat failed (rc={result.returncode})\n"
+                    f"stdout: {result.stdout}\nstderr: {result.stderr}"
+                )
 
-                report(100)
-                logger.info("Coverage prediction completed.")
-                return geotiff
+            if not os.path.exists(img_path):
+                raise RuntimeError(f"No GeoTIFF output found at '{img_path}'.")
 
-            except Exception as e:
-                logger.error(f"Coverage prediction error: {e}")
-                raise RuntimeError(f"Coverage prediction error: {e}")
+            with open(img_path, "rb") as f:
+                geotiff = f.read()
+
+            report(100)
+            logger.info("Coverage prediction completed.")
+            return geotiff
+
+        except Exception as e:
+            logger.error(f"Coverage prediction error: {e}")
+            raise RuntimeError(f"Coverage prediction error: {e}") from e
+        finally:
+            if os.path.exists(img_path):
+                os.remove(img_path)
 
     # ------------------------------------------------------------------
     # Terrain tile helpers
     # ------------------------------------------------------------------
 
     @staticmethod
-    def _copernicus_filename(latitude: float, longitude: float, high_resolution: bool = True) -> str:
+    def _copernicus_filename(latitude: float, longitude: float, high_resolution: bool = False) -> str:
         """Generate the Copernicus DEM filename."""
         res = "10" if high_resolution else "30"
         lat_val = int(math.floor(latitude))
@@ -211,7 +207,7 @@ class Splat:
     def _calculate_required_terrain_tiles(
         lat: float, lon: float, radius: float,
         high_resolution: bool = False
-    ) -> List[Tuple[str]]:
+    ) -> List[str]:
         """
         Return the list of copernicus_filename tuples
         covering the bounding box defined by lat/lon/radius.
@@ -265,16 +261,13 @@ class Splat:
             else:
                 base_url = f"https://{self.bucket_name}.s3.amazonaws.com"
                 logger.info(f"low: {base_url}")
-            tile_data = None
             url = f"{base_url}/{tile_dir}/{tile_name}"
             logger.info(f"Downloading {url}")
-            resp = http.get(url, timeout=60)
-            if resp.status_code == 200:
-                tile_data = resp.content
-            if resp.status_code != 404:
-                resp.raise_for_status()
-            if tile_data is None:
+            resp = httpx.get(url, timeout=60)
+            if resp.status_code == 404:
                 raise FileNotFoundError(f"Terrain tile '{tile_name}' not found in S3.")
+            resp.raise_for_status()
+            tile_data = resp.content
 
             with open(copernicus_path, "wb") as f:
                 f.write(tile_data)

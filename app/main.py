@@ -130,6 +130,8 @@ async def get_result(task_id: str):
         if not geotiff_data:
             logger.error(f"No data found for completed task {task_id}.")
             return JSONResponse({"error": "No result found"}, status_code=500)
+        with _store_lock:
+            _task_store.pop(task_id, None)
         return StreamingResponse(
             io.BytesIO(geotiff_data),
             media_type="image/tiff",

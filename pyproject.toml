@@ -1,12 +1,12 @@
 [project]
 name = "splat-api"
-version = "0.1.0"
-description = "Add your description here"
+version = "1.0"
+description = "RF propagation API using signalserver/splat! as a backend"
 readme = "README.md"
 requires-python = ">=3.14"
 dependencies = [
     "fastapi>=0.135.3",
     "pydantic>=2.12.5",
-    "requests>=2.33.1",
+    "httpx>=0.28.0",
     "uvicorn>=0.44.0",
 ]
