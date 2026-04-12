@@ -29,6 +29,7 @@ class Splat:
         self,
         splat_path: str,
         dem_dir: str = ".splat_dem",
+        antenna_dir: str = "/app/antenna",
         bucket_name: str = "copernicus-dem-90m",
         bucket_name_high_resolution: str = "copernicus-dem-30m",
         max_concurrent_jobs: int = 1,
@@ -60,6 +61,7 @@ class Splat:
 
         os.makedirs(dem_dir, exist_ok=True)
         self.dem_dir = dem_dir
+        self.antenna_dir = antenna_dir
         self.bucket_name = bucket_name
         self.bucket_name_high_resolution = bucket_name_high_resolution
         self._semaphore = threading.Semaphore(max_concurrent_jobs)
@@ -140,7 +142,8 @@ class Splat:
                 "-pm", str(request.propagation_model),
             ]
             if request.antenna_pattern:
-                command += ["-ant", request.antenna_pattern]
+                ant_path = os.path.join(self.antenna_dir, request.antenna_pattern)
+                command += ["-ant", ant_path]
                 if request.antenna_rotation != 0.0:
                     command += ["-rot", str(request.antenna_rotation)]
             if request.high_resolution:
