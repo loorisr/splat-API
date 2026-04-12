@@ -192,6 +192,7 @@ Digital Elevation Model (DEM) data is automatically downloaded from AWS Open Dat
 ## Todo
 
 - Use in memory transfer between signal server and python (/vsimem/ with GDAL)
+- Compile signalserver in the Dockerfile
 
 ## Acknowledgments
 
