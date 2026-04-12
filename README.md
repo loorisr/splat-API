@@ -50,7 +50,10 @@ Start a new coverage prediction task.
   "polarization": "vertical",
   "situation_fraction": 50.0,
   "colormap": "heat",
-  "high_resolution": False
+  "high_resolution": false,
+  "propagation_model": 1,
+  "antenna_pattern": null,
+  "antenna_rotation": 0.0
 }
 ```
 
@@ -107,6 +110,11 @@ Download the GeoTIFF result for a completed task.
 - `radio_climate` (string): One of: "equatorial", "continental_subtropical", "maritime_subtropical", "desert", "continental_temperate", "maritime_temperate_land", "maritime_temperate_sea"
 - `polarization` (string): "horizontal" or "vertical"
 - `situation_fraction` (float): Percentage of locations where prediction is valid (1-100, default: 50)
+- `propagation_model` (int): Propagation model 1–13 (default: 1 = ITM). 1=ITM, 2=LOS, 3=Hata, 4=ECC33, 5=SUI, 6=COST-Hata, 7=FSPL, 8=ITWOM, 9=Ericsson, 10=Plane earth, 11=Egli VHF/UHF, 12=Soil, 13=NTIA ITM
+
+### Antenna Pattern
+- `antenna_pattern` (string, optional): Path + basename to antenna pattern files (without `.az`/`.el` extension). If omitted, an isotropic pattern is used.
+- `antenna_rotation` (float): Antenna pattern rotation in degrees (0.0–359.0, default: 0.0). Only applied when `antenna_pattern` is set.
 
 ### Visualization
 - `colormap` (string): Colormap for visualization: "heat" (default), "jet", "turbo", "viridis", "magma", "plasma", "inferno", "hot", "parula", "gray", "hsv", "cubehelix", "cividis", "github"

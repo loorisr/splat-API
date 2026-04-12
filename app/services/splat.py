@@ -137,7 +137,12 @@ class Splat:
                 "-dbm",
                 "-rt", str(request.signal_threshold),
                 "-dem", self.dem_dir,
+                "-pm", str(request.propagation_model),
             ]
+            if request.antenna_pattern:
+                command += ["-ant", request.antenna_pattern]
+                if request.antenna_rotation != 0.0:
+                    command += ["-rot", str(request.antenna_rotation)]
             if request.high_resolution:
                 command.append("-hd")
             if request.polarization == "horizontal":
