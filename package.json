@@ -1,0 +1,37 @@
+{
+  "name": "meshtastic-site-planner",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vue-tsc -b && vite build && cp -r public/* app/ui",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "@vueuse/core": "^14.2.1",
+    "bootstrap": "^5.3.8",
+    "georaster": "^1.6.0",
+    "georaster-layer-for-leaflet": "4.1.2",
+    "leaflet": "^1.9.4",
+    "leaflet-easyprint": "^2.1.9",
+    "leaflet.locatecontrol": "^0.89.0",
+    "pinia": "^3.0.4",
+    "randanimal": "^1.0.4",
+    "vue": "^3.5.32",
+    "vue3-popper": "^1.5.0"
+  },
+  "devDependencies": {
+    "@types/bootstrap": "^5.2.10",
+    "@types/leaflet": "^1.9.21",
+    "@vitejs/plugin-vue": "^6.0.6",
+    "typescript": "~6.0.3",
+    "vite": "^8.0.9",
+    "vue-tsc": "^3.2.7"
+  },
+  "pnpm": {
+    "overrides": {
+      "proj4-fully-loaded": "^0.2.0"
+    }
+  }
+}

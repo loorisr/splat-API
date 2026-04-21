@@ -10,9 +10,9 @@ Endpoints:
     - /result/{task_id}: Retrieves the result (GeoTIFF file) of a given prediction task.
 """
 
-import os
 import threading
 import time
+from pathlib import Path
 from datetime import datetime, timedelta, timezone
 from fastapi import FastAPI, BackgroundTasks
 from fastapi.responses import JSONResponse, StreamingResponse
@@ -143,3 +143,21 @@ async def get_result(task_id: str):
 
     logger.info(f"Task {task_id} is still processing.")
     return JSONResponse({"status": "processing"})
+
+
+PROJECT_ROOT = Path(__file__).resolve().parents[1]
+UI_DIST_DIR = PROJECT_ROOT / "app" / "ui"
+
+if UI_DIST_DIR.is_dir():
+    logger.info("Serving frontend from %s", UI_DIST_DIR)
+    app.mount("/", StaticFiles(directory=str(UI_DIST_DIR), html=True), name="ui")
+else:
+    logger.info("Frontend build not found at %s", UI_DIST_DIR)
+
+    @app.get("/", include_in_schema=False)
+    async def root():
+        return JSONResponse(
+            {
+                "message": "API is running. Build the Vue app to app/ui to serve it from FastAPI."
+            }
+        )

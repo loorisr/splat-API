@@ -44,12 +44,6 @@ class CoveragePredictionRequest(BaseModel):
     ground_conductivity: Optional[float] = Field(
         0.005, ge=0, description="Ground conductivity in S/m (default: 0.005)"
     )
-    atmosphere_bending: Optional[float] = Field(
-        301.0,
-        ge=0,
-        description="Atmospheric bending constant in N-units (default: 301.0)",
-    )
-
     # Model Settings
     radius: float = Field(
         1000.0, ge=1, description="Model maximum range in meters (>= 1 m)"
@@ -103,6 +97,14 @@ class CoveragePredictionRequest(BaseModel):
     high_resolution: bool = Field(
         False,
         description="Use optional 1-arcsecond / 30 meter resolution terrain tiles instead of the default 3-arcsecond / 90 meter (default: False).",
+    )
+    fast: bool = Field(
+        False,
+        description="Enable signalserver fast mode (-fast).",
+    )
+    dh: bool = Field(
+        False,
+        description="Enable signalserver delta-H option (-dh 10).",
     )
 
     # Propagation model
