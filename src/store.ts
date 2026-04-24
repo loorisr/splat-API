@@ -11,6 +11,7 @@ import { redPinMarker } from './layers.ts';
 
 const API_COLORMAPS = new Set(['heat', 'jet', 'turbo', 'viridis', 'magma', 'plasma', 'inferno', 'hot', 'parula', 'gray', 'hsv', 'cubehelix', 'cividis', 'github']);
 const RASTER_LAYER_RESOLUTION = 128;
+const appUrl = (path: string) => new URL(path.replace(/^\/+/, ''), document.baseURI).toString();
 
 const useStore = defineStore('store', {
   state() {
@@ -242,7 +243,7 @@ const useStore = defineStore('store', {
         this.simulationState = 'running';
     
         // Send the request to the backend's /predict endpoint
-        const predictResponse = await fetch("/predict", {
+        const predictResponse = await fetch(appUrl("predict"), {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
@@ -264,9 +265,7 @@ const useStore = defineStore('store', {
         // Poll for task status and result
         const pollInterval = 1000; // 1 seconds
         const pollStatus = async () => {
-          const statusResponse = await fetch(
-            `/status/${taskId}`,
-          );
+          const statusResponse = await fetch(appUrl(`status/${taskId}`));
           if (!statusResponse.ok) {
             throw new Error("Failed to fetch task status.");
           }
@@ -279,9 +278,7 @@ const useStore = defineStore('store', {
             console.log("Simulation completed! Adding result to the map...");
 
             // Fetch the GeoTIFF data
-            const resultResponse = await fetch(
-              `/result/${taskId}`,
-            );
+            const resultResponse = await fetch(appUrl(`result/${taskId}`));
             if (!resultResponse.ok) {
               throw new Error("Failed to fetch simulation result.");
             }

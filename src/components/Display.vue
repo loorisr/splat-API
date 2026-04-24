@@ -43,7 +43,7 @@
       <div>
         <img
           v-if="hasColorbarPreview"
-          :src="`/colormaps/${display.color_scale}.png`"
+          :src="assetUrl(`colormaps/${display.color_scale}.png`)"
           alt="Colorbar"
           width="256"
           height="30"
@@ -65,4 +65,5 @@ import { useStore } from "../store.ts";
 const display = useStore().splatParams.display;
 const PREVIEW_COLORMAPS = new Set(["heat", "jet", "turbo", "viridis", "magma", "plasma", "inferno", "hot", "parula", "gray", "hsv", "cubehelix", "cividis", "github"]);
 const hasColorbarPreview = computed(() => PREVIEW_COLORMAPS.has(display.color_scale));
+const assetUrl = (path: string) => new URL(path.replace(/^\/+/, ''), document.baseURI).toString();
 </script>

@@ -3,7 +3,7 @@
     <nav class="navbar navbar-dark bg-dark fixed-top">
       <div class="container-fluid">
         <a class="navbar-brand" href="#">
-          <img src="/logo.svg" alt="Meshtastic Logo" width="30" height="30" class="d-inline">
+          <img :src="assetUrl('logo.svg')" alt="Meshtastic Logo" width="30" height="30" class="d-inline">
           Meshtastic Site Planner
         </a>
         <button class="navbar-toggler" type="button" data-bs-toggle="offcanvas" data-bs-target="#offcanvasDarkNavbar" aria-controls="offcanvasDarkNavbar" aria-label="Toggle navigation">
@@ -97,6 +97,7 @@ import Display from "./components/Display.vue"
 
 import { useStore } from './store.ts'
 const store = useStore()
+const assetUrl = (path: string) => new URL(path.replace(/^\/+/, ''), document.baseURI).toString()
 const buttonText = () => {
   if ('running' === store.simulationState) {
     return 'Running'
