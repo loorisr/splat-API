@@ -17,7 +17,6 @@ coverage/
 *.tsbuildinfo
 
 # Build output / generated assets
-app/ui/
 DEM/
 
 # IDE/editor
