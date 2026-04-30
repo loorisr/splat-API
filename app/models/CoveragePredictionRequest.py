@@ -67,15 +67,15 @@ class CoveragePredictionRequest(BaseModel):
         "vertical",
         description="Signal polarization, 'horizontal' or 'vertical' (default: 'vertical')",
     )
-    situation_fraction: Optional[float] = Field(
+    situation_fraction: float = Field(
         50,
-        gt=1,
+        ge=1,
         le=100,
         description="Percentage of locations within the modeled area where the signal prediction is expected to be valid (default 50).",
     )
-    time_fraction: Optional[float] = Field(
+    time_fraction: float = Field(
         90,
-        gt=1,
+        ge=1,
         le=100,
         description="Percentage of times where the signal prediction is expected to be valid (default 90).",
     )
@@ -90,21 +90,23 @@ class CoveragePredictionRequest(BaseModel):
         description="Minimum dBm value for the colormap (default: -130.0).",
     )
     max_dbm: float = Field(
-        -30.0,
-        description="Maximum dBm value for the colormap (default: -30.0).",
+        0.0,
+        description="Maximum dBm value for the colormap (default: 0.0).",
     )
 
     high_resolution: bool = Field(
         False,
         description="Use optional 1-arcsecond / 30 meter resolution terrain tiles instead of the default 3-arcsecond / 90 meter (default: False).",
     )
-    fast: bool = Field(
-        False,
-        description="Enable signalserver fast mode (-fast).",
+    delta_h_points: int = Field(
+        0,
+        ge=0,
+        description="Delta-H method for ITM: N points for calculate_delta_h_adjustable (0 = legacy ITM behavior, no interpolation).",
     )
-    dh: bool = Field(
-        False,
-        description="Enable signalserver delta-H option (-dh 10).",
+    fast_delta_h_every_n_points: int = Field(
+        0,
+        ge=0,
+        description="Recompute ITM delta-H every N points after the first N points from TX on each radial (ITM only), using linear interpolation in between. Use 0 to disable fast mode.",
     )
 
     # Propagation model

@@ -48,13 +48,13 @@ const useStore = defineStore('store', {
           time_fraction: 95.0,
           simulation_extent: 30.0,
           high_resolution: false,
-          fast_option: false,
-          dh_option: false
+          fast_delta_h_every_n_points: 0,
+          delta_h_points: 0
         },
         display: {
           color_scale: 'plasma',
           min_dbm: -130.0,
-          max_dbm: -80.0,
+          max_dbm: 0.0,
           overlay_transparency: 50
         },
       }
@@ -227,11 +227,11 @@ const useStore = defineStore('store', {
 
           // Simulation parameters
           radius: this.splatParams.simulation.simulation_extent * 1000,
-          situation_fraction: Math.max(2, this.splatParams.simulation.situation_fraction),
-          time_fraction: Math.max(2, this.splatParams.simulation.time_fraction),
+          situation_fraction: Math.max(1, this.splatParams.simulation.situation_fraction),
+          time_fraction: Math.max(1, this.splatParams.simulation.time_fraction),
           high_resolution: this.splatParams.simulation.high_resolution,
-          fast: this.splatParams.simulation.fast_option,
-          dh: this.splatParams.simulation.dh_option,
+          fast_delta_h_every_n_points: this.splatParams.simulation.fast_delta_h_every_n_points,
+          delta_h_points: this.splatParams.simulation.delta_h_points,
 
           // Display parameters
           colormap,

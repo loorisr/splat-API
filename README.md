@@ -43,7 +43,6 @@ Start a new coverage prediction task.
   "clutter_height": 0.0,
   "ground_dielectric": 15.0,
   "ground_conductivity": 0.005,
-  "atmosphere_bending": 301.0,
   "radius": 100000.0,
   "system_loss": 0.0,
   "radio_climate": "continental_temperate",
@@ -51,6 +50,8 @@ Start a new coverage prediction task.
   "situation_fraction": 50.0,
   "colormap": "heat",
   "high_resolution": false,
+  "delta_h_points": 0,
+  "fast_delta_h_every_n_points": 0,
   "propagation_model": 1,
   "antenna_pattern": null,
   "antenna_rotation": 0.0
@@ -102,7 +103,6 @@ Download the GeoTIFF result for a completed task.
 - `clutter_height` (float): Ground clutter height in meters (≥ 0)
 - `ground_dielectric` (float): Ground dielectric constant (default: 15.0)
 - `ground_conductivity` (float): Ground conductivity in S/m (default: 0.005)
-- `atmosphere_bending` (float): Atmospheric bending constant in N-units (default: 301.0)
 
 ### Model Settings
 - `radius` (float): Model maximum range in meters (≥ 1 m, capped at 100 km)
@@ -110,6 +110,9 @@ Download the GeoTIFF result for a completed task.
 - `radio_climate` (string): One of: "equatorial", "continental_subtropical", "maritime_subtropical", "desert", "continental_temperate", "maritime_temperate_land", "maritime_temperate_sea"
 - `polarization` (string): "horizontal" or "vertical"
 - `situation_fraction` (float): Percentage of locations where prediction is valid (1-100, default: 50)
+- `time_fraction` (float): Percentage of times where prediction is valid (1-100, default: 90)
+- `delta_h_points` (int): ITM delta-H interpolation points. `0` keeps legacy ITM behavior.
+- `fast_delta_h_every_n_points` (int): `0` disables `-fast`; positive values enable `-fast N` and recompute ITM delta-H every `N` points.
 - `propagation_model` (int): Propagation model 1–13 (default: 1 = ITM). 1=ITM, 2=LOS, 3=Hata, 4=ECC33, 5=SUI, 6=COST-Hata, 7=FSPL, 8=ITWOM, 9=Ericsson, 10=Plane earth, 11=Egli VHF/UHF, 12=Soil, 13=NTIA ITM
 
 ### Antenna Pattern

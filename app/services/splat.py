@@ -148,10 +148,10 @@ class Splat:
                     command += ["-rot", str(request.antenna_rotation)]
             if request.high_resolution:
                 command.append("-hd")
-            if request.fast:
-                command.append("-fast")
-            if request.dh:
-                command += ["-dh", "10"]
+            if request.fast_delta_h_every_n_points > 0:
+                command += ["-fast", str(request.fast_delta_h_every_n_points)]
+            if request.delta_h_points > 0:
+                command += ["-dh", str(request.delta_h_points)]
             if request.polarization == "horizontal":
                 command.append("-hp") ## default is vertical
 

@@ -33,8 +33,8 @@ export interface SplatParams {
         time_fraction: number;
         simulation_extent: number;
         high_resolution: boolean;
-        fast_option: boolean;
-        dh_option: boolean;
+        fast_delta_h_every_n_points: number;
+        delta_h_points: number;
     };
     display: {
         color_scale: string;

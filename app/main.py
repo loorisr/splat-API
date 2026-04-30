@@ -145,6 +145,12 @@ async def get_result(task_id: str):
     return JSONResponse({"status": "processing"})
 
 
+@app.get("/health", include_in_schema=False)
+async def health():
+    """Basic health endpoint for container and load balancer checks."""
+    return JSONResponse({"status": "ok"})
+
+
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 UI_DIST_DIR = PROJECT_ROOT / "app" / "ui"
 
