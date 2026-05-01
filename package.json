@@ -9,7 +9,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "@vueuse/core": "^14.2.1",
+    "@vueuse/core": "^14.3.0",
     "bootstrap": "^5.3.8",
     "georaster": "^1.6.0",
     "georaster-layer-for-leaflet": "4.1.2",
