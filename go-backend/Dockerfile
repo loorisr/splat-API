@@ -3,16 +3,26 @@ WORKDIR /build
 COPY go-backend/ .
 RUN go mod tidy && CGO_ENABLED=0 GOOS=linux go build -ldflags="-s -w" -o /build/server .
 
-FROM ubuntu:24.04
-RUN apt-get update && apt-get install -y \
-    libgdal34 \
-    libspdlog1.12 \
+FROM alpine:latest AS signalserver
+RUN apk add --no-cache \
+    git \
+    cmake \
+    build-base \
+    spdlog-dev \
+    gdal-dev
+WORKDIR /build
+RUN git clone --depth 1 https://github.com/loorisr/Signal-Server.git .
+RUN cmake src && make
+
+FROM alpine:latest
+RUN apk add --no-cache \
+    gdal \
+    spdlog \
     curl \
-    ca-certificates \
-    && apt-get clean && rm -rf /var/lib/apt/lists/*
+    ca-certificates
 WORKDIR /app
 COPY --from=builder /build/server /app/server
-COPY signalserver /app/signalserver
+COPY --from=signalserver /build/signalserver /app/signalserver
 COPY app/ui /app/app/ui
 RUN chmod +x /app/server /app/signalserver
 EXPOSE 8080
