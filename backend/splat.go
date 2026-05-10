@@ -86,7 +86,7 @@ func (s *Splat) CoveragePrediction(req *CoveragePredictionRequest, progressCallb
 
 	// Unique job ID used as the output filename prefix.
 	jobID := newUUID()
-	outputBase := filepath.Join(s.demDir, jobID)
+	outputBase := filepath.Join("/tmp", jobID)
 	imgPath := outputBase + ".tif"
 
 	// Always clean up the output file regardless of success or failure.
