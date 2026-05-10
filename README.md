@@ -2,7 +2,7 @@
 
 A FastAPI-based REST service for predicting radio signal coverage using the Irregular Terrain Model (ITM) via SPLAT! (Signal Propagation, Loss, And Terrain)/Signal Server. This API provides asynchronous computation of coverage maps with GeoTIFF output.
 
-It is based on [Meshtastic Site Planner](https://github.com/meshtastic/meshtastic-site-planner) and the API is 100% compatible but uses a more optimized SPLAT! version (modified Signal-Server).
+It is based on [Meshtastic Site Planner](https://github.com/meshtastic/meshtastic-site-planner) and the API is 100% compatible but uses a more optimized SPLAT! version (modified Signal-Server) and a backend in Go.
 
 ## Features
 
@@ -127,10 +127,12 @@ Download the GeoTIFF result for a completed task.
 
 ### Prerequisites
 - Docker and Docker Compose
-- Python 3.14+ (for local development)
-- UV package manager (recommended)
 
 ### Using Docker (Recommended)
+
+Use built docker image: `docker pull ghcr.io/loorisr/splat-api:latest`
+
+Or build from Dockerfile:
 
 1. Clone the repository:
 ```bash
@@ -145,22 +147,6 @@ docker-compose up --build
 
 The API will be available at `http://localhost:8080`
 
-### Local Development
-
-1. Install dependencies with UV:
-```bash
-uv sync
-```
-
-2. Ensure the SPLAT! binary (`signalserver`) is in the project root and executable:
-```bash
-chmod +x signalserver
-```
-
-3. Run the FastAPI server:
-```bash
-uv run uvicorn app.main:app --host 0.0.0.0 --port 8080 --reload
-```
 
 ## Technical Details
 
@@ -199,11 +185,6 @@ Digital Elevation Model (DEM) data is automatically downloaded from AWS Open Dat
 
 - In-memory task store (not persistent across restarts)
 - Maximum prediction radius of 100 km
-
-## Todo
-
-- Use in memory transfer between signal server and python (/vsimem/ with GDAL)
-- Compile signalserver in the Dockerfile
 
 ## Acknowledgments
 

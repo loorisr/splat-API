@@ -12,17 +12,3 @@ services:
     security_opt:
       - no-new-privileges:true
     restart: unless-stopped
-
-  splat_api_go:
-    build:
-      context: .
-      dockerfile: go-backend/Dockerfile
-    container_name: splat_api_go
-    volumes:
-      - ~/DEM:/app/DEM
-      - ~/antenna:/app/antenna
-    ports:
-      - 8081:8080
-    security_opt:
-      - no-new-privileges:true
-    restart: unless-stopped
