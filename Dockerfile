@@ -12,7 +12,7 @@ RUN apk add --no-cache \
     gdal-dev
 WORKDIR /build
 RUN git clone --depth 1 https://github.com/loorisr/Signal-Server.git .
-RUN cmake src && make
+RUN cmake -DCMAKE_CXX_FLAGS="-march=alderlake" -DCMAKE_C_FLAGS="-march=alderlake" src && make
 
 FROM alpine:latest
 RUN apk add --no-cache \
