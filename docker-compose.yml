@@ -3,7 +3,12 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
+    #image: ghcr.io/loorisr/splat-api:latest
     container_name: splat_api
+    read_only: true
+    tmpfs:
+      - /tmp
+    user: 1000:1000
     volumes:
       - ~/DEM:/app/DEM
       - ~/antenna:/app/antenna
@@ -11,4 +16,12 @@ services:
       - 8080:8080
     security_opt:
       - no-new-privileges:true
+    cap_drop:
+      - ALL
     restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8080"]
+      interval: 30s
+      start_period: 10s
+      start_interval: 1s
+      timeout: 2s
