@@ -9,29 +9,24 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "@vueuse/core": "^14.3.0",
+    "@vue/devtools-api": "^8.2.1",
     "bootstrap": "^5.3.8",
     "georaster": "^1.6.0",
     "georaster-layer-for-leaflet": "4.1.2",
     "leaflet": "^1.9.4",
     "leaflet-easyprint": "^2.1.9",
-    "leaflet.locatecontrol": "^0.90.0",
-    "pinia": "^3.0.4",
+    "leaflet.locatecontrol": "^0.90.1",
+    "pinia": "^4.1.0",
     "randanimal": "^1.0.4",
-    "vue": "^3.5.34",
+    "vue": "^3.5.44",
     "vue3-popper": "^1.5.0"
   },
   "devDependencies": {
-    "@types/bootstrap": "^5.2.10",
-    "@types/leaflet": "^1.9.21",
-    "@vitejs/plugin-vue": "^6.0.6",
+    "@types/bootstrap": "^5.2.11",
+    "@types/leaflet": "^1.9.22",
+    "@vitejs/plugin-vue": "^6.0.10",
     "typescript": "~6.0.3",
-    "vite": "^8.0.12",
-    "vue-tsc": "^3.2.8"
-  },
-  "pnpm": {
-    "overrides": {
-      "proj4-fully-loaded": "^0.2.0"
-    }
+    "vite": "^8.3.5",
+    "vue-tsc": "^3.3.13"
   }
 }

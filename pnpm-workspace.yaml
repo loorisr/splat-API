@@ -1,0 +1,6 @@
+allowBuilds:
+  es5-ext: false
+  esbuild: true
+
+overrides:
+  proj4-fully-loaded: ^0.2.0
