@@ -18,7 +18,7 @@
     "leaflet.locatecontrol": "^0.90.1",
     "pinia": "^4.1.0",
     "randanimal": "^1.0.4",
-    "vue": "^3.5.44",
+    "vue": "^3.5.45",
     "vue3-popper": "^1.5.0"
   },
   "devDependencies": {
@@ -26,7 +26,7 @@
     "@types/leaflet": "^1.9.22",
     "@vitejs/plugin-vue": "^6.0.10",
     "typescript": "~6.0.3",
-    "vite": "^8.3.5",
-    "vue-tsc": "^3.3.13"
+    "vite": "^8.3.7",
+    "vue-tsc": "^3.3.14"
   }
 }
