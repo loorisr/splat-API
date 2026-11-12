@@ -15,7 +15,8 @@ RUN apk add --no-cache \
 WORKDIR /build
 
 RUN git clone --depth 1 https://github.com/loorisr/Signal-Server.git .
-RUN cmake -DCMAKE_CXX_FLAGS="-march=alderlake" -DCMAKE_C_FLAGS="-march=alderlake" src && make
+# alderlake = Intel N100 (AVX2/FMA, no AVX-512); "native" would target the CI runner
+RUN cmake -DSIGNALSERVER_ARCH=alderlake src && make -j"$(nproc)"
 
 FROM alpine:latest
 RUN apk add --no-cache \
