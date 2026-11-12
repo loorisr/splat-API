@@ -24,6 +24,7 @@ import (
 type Splat struct {
 	binaryPath               string
 	demDir                   string
+	demCacheDir              string // signalserver -demcache directory, empty = disabled
 	antennaDir               string
 	bucketName               string
 	bucketNameHighResolution string
@@ -42,15 +43,21 @@ type Splat struct {
 //	binaryPath  — directory containing the signalserver binary.
 //	demDir      — directory to cache downloaded Copernicus DEM tiles.
 //	antennaDir  — directory containing antenna pattern (.az/.el) files.
-func NewSplat(binaryPath, demDir, antennaDir string) *Splat {
+func NewSplat(binaryPath, demDir, demCacheDir, antennaDir string) *Splat {
 	// Ensure DEM cache directory exists.
 	if err := os.MkdirAll(demDir, 0755); err != nil {
 		log.Fatalf("Failed to create DEM directory %s: %v", demDir, err)
+	}
+	if demCacheDir != "" {
+		if err := os.MkdirAll(demCacheDir, 0755); err != nil {
+			log.Fatalf("Failed to create decoded DEM cache directory %s: %v", demCacheDir, err)
+		}
 	}
 
 	s := &Splat{
 		binaryPath:               binaryPath,
 		demDir:                   demDir,
+		demCacheDir:              demCacheDir,
 		antennaDir:               antennaDir,
 		bucketName:               "copernicus-dem-90m", // standard 3-arcsecond / 90 m tiles
 		bucketNameHighResolution: "copernicus-dem-30m", // optional 1-arcsecond / 30 m tiles
@@ -66,8 +73,8 @@ func NewSplat(binaryPath, demDir, antennaDir string) *Splat {
 		log.Fatalf("signalserver binary not found at %s", binaryFile)
 	}
 
-	log.Printf("Initialized SPLAT! — dem_dir: %s, max concurrent jobs: %d, timeout: %s",
-		demDir, s.maxConcurrentJobs, s.jobTimeout)
+	log.Printf("Initialized SPLAT! — dem_dir: %s, dem_cache_dir: %q, max concurrent jobs: %d, timeout: %s",
+		demDir, demCacheDir, s.maxConcurrentJobs, s.jobTimeout)
 	return s
 }
 
@@ -156,6 +163,9 @@ func (s *Splat) CoveragePrediction(req *CoveragePredictionRequest, progressCallb
 	}
 
 	// Optional flags.
+	if s.demCacheDir != "" {
+		command = append(command, "-demcache", s.demCacheDir)
+	}
 	if req.HighResolution {
 		command = append(command, "-hd")
 	}

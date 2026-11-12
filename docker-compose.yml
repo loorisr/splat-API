@@ -9,8 +9,11 @@ services:
     tmpfs:
       - /tmp
     user: 1000:1000
+    environment:
+      - DEM_DECODED_CACHE_DIR=/app/DEM_cache
     volumes:
       - ~/DEM:/app/DEM
+      - ~/DEM_cache:/app/DEM_cache
       - ~/antenna:/app/antenna
     ports:
       - 8080:8080

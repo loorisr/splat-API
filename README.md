@@ -171,6 +171,7 @@ Digital Elevation Model (DEM) data is automatically downloaded from AWS Open Dat
 
 ### Environment Variables
 - `DEM_DIR`: Directory for DEM cache (default: `/app/DEM`)
+- `DEM_DECODED_CACHE_DIR`: Directory for Signal-Server's decoded DEM tile cache (`-demcache`, raw float32 tiles, ~15 % faster runs, uses more disk space than the GeoTIFF tiles). Empty/unset disables it (default: disabled; set to `/app/DEM_cache` in `docker-compose.yml`)
 - `SPLAT_PATH`: Path to SPLAT! binaries (default: `/app`)
 - `TASK_TTL_SECONDS`: Task time-to-live in seconds (default: 300)
 

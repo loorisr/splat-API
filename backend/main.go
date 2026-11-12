@@ -27,9 +27,11 @@ func main() {
 	splatBinaryPath := envOrDefault("SPLAT_BINARY_PATH", "/app")
 	demDir := envOrDefault("DEM_DIR", "/app/DEM")
 	antennaDir := envOrDefault("ANTENNA_DIR", "/app/antenna")
+	// Optional cache of decoded DEM tiles (signalserver -demcache). Empty disables it.
+	demCacheDir := os.Getenv("DEM_DECODED_CACHE_DIR")
 
 	// Initialize the SPLAT! wrapper (validates binary existence, creates DEM cache dir).
-	splatService := NewSplat(splatBinaryPath, demDir, antennaDir)
+	splatService := NewSplat(splatBinaryPath, demDir, demCacheDir, antennaDir)
 
 	// Wire up HTTP handlers.
 	handler := NewHandler(store, splatService)
