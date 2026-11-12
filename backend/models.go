@@ -76,7 +76,7 @@ type CoveragePredictionRequest struct {
 	// Terrain options.
 	HighResolution         bool `json:"high_resolution"`            // use 30 m DEM tiles instead of 90 m, default false
 	DeltaHPoints           int  `json:"delta_h_points"`             // >= 0 — ITM delta-H interpolation points, default 0
-	FastDeltaHEveryNPoints int  `json:"fast_delta_h_every_n_points"` // >= 0 — ITM fast delta-H interval, default 0
+	FastDeltaHEveryNPoints *int `json:"fast_delta_h_every_n_points"` // >= 0 — ITM fast delta-H interval (0 disables), default 50
 
 	// Propagation model.
 	PropagationModel int `json:"propagation_model"` // [1, 13] — model code, default 1 (ITM)
@@ -157,6 +157,10 @@ func (r *CoveragePredictionRequest) applyDefaults() {
 	}
 	if r.PropagationModel == 0 {
 		r.PropagationModel = 1
+	}
+	if r.FastDeltaHEveryNPoints == nil {
+		v := 50
+		r.FastDeltaHEveryNPoints = &v
 	}
 }
 
@@ -258,7 +262,7 @@ func (r *CoveragePredictionRequest) Validate() error {
 	if r.DeltaHPoints < 0 {
 		errs = append(errs, ValidationError{"delta_h_points", "must be >= 0"})
 	}
-	if r.FastDeltaHEveryNPoints < 0 {
+	if r.FastDeltaHEveryNPoints != nil && *r.FastDeltaHEveryNPoints < 0 {
 		errs = append(errs, ValidationError{"fast_delta_h_every_n_points", "must be >= 0"})
 	}
 	if r.PropagationModel < 1 || r.PropagationModel > 13 {

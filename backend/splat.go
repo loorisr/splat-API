@@ -159,8 +159,8 @@ func (s *Splat) CoveragePrediction(req *CoveragePredictionRequest, progressCallb
 	if req.HighResolution {
 		command = append(command, "-hd")
 	}
-	if req.FastDeltaHEveryNPoints > 0 {
-		command = append(command, "-fast", strconv.Itoa(req.FastDeltaHEveryNPoints))
+	if req.FastDeltaHEveryNPoints != nil && *req.FastDeltaHEveryNPoints > 0 {
+		command = append(command, "-fast", strconv.Itoa(*req.FastDeltaHEveryNPoints))
 	}
 	if req.DeltaHPoints > 0 {
 		command = append(command, "-dh", strconv.Itoa(req.DeltaHPoints))

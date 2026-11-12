@@ -51,7 +51,7 @@ Start a new coverage prediction task.
   "colormap": "heat",
   "high_resolution": false,
   "delta_h_points": 0,
-  "fast_delta_h_every_n_points": 0,
+  "fast_delta_h_every_n_points": 50,
   "propagation_model": 1,
   "antenna_pattern": null,
   "antenna_rotation": 0.0
@@ -112,7 +112,7 @@ Download the GeoTIFF result for a completed task.
 - `situation_fraction` (float): Percentage of locations where prediction is valid (1-100, default: 50)
 - `time_fraction` (float): Percentage of times where prediction is valid (1-100, default: 90)
 - `delta_h_points` (int): ITM delta-H interpolation points. `0` keeps legacy ITM behavior.
-- `fast_delta_h_every_n_points` (int): `0` disables `-fast`; positive values enable `-fast N` and recompute ITM delta-H every `N` points.
+- `fast_delta_h_every_n_points` (int): default `50` (recommended by Signal-Server). `0` disables `-fast`; positive values enable `-fast N` and recompute ITM delta-H every `N` points.
 - `propagation_model` (int): Propagation model 1–13 (default: 1 = ITM). 1=ITM, 2=LOS, 3=Hata, 4=ECC33, 5=SUI, 6=COST-Hata, 7=FSPL, 8=ITWOM, 9=Ericsson, 10=Plane earth, 11=Egli VHF/UHF, 12=Soil, 13=NTIA ITM
 
 ### Antenna Pattern

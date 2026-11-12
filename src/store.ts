@@ -48,7 +48,7 @@ const useStore = defineStore('store', {
           time_fraction: 95.0,
           simulation_extent: 30.0,
           high_resolution: false,
-          fast_delta_h_every_n_points: 0,
+          fast_delta_h_every_n_points: 50,
           delta_h_points: 0
         },
         display: {
