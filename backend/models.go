@@ -27,13 +27,13 @@ var RadioClimates = []string{
 
 // ClimateMap maps radio climate names to the integer codes expected by signalserver.
 var ClimateMap = map[string]int{
-	"equatorial":                1,
-	"continental_subtropical":   2,
-	"maritime_subtropical":      3,
-	"desert":                    4,
-	"continental_temperate":     5,
-	"maritime_temperate_land":   6,
-	"maritime_temperate_sea":    7,
+	"equatorial":              1,
+	"continental_subtropical": 2,
+	"maritime_subtropical":    3,
+	"desert":                  4,
+	"continental_temperate":   5,
+	"maritime_temperate_land": 6,
+	"maritime_temperate_sea":  7,
 }
 
 // CoveragePredictionRequest is the input payload for POST /predict.
@@ -43,12 +43,12 @@ var ClimateMap = map[string]int{
 // distinguish between "omitted" (nil) and "explicitly set to zero".
 type CoveragePredictionRequest struct {
 	// Transmitter parameters.
-	Lat          float64 `json:"lat"`            // [-90, 90]  — transmitter latitude (degrees)
-	Lon          float64 `json:"lon"`            // [-180, 180] — transmitter longitude (degrees)
-	TxHeight     float64 `json:"tx_height"`      // >= 1  — TX height above ground (m), default 1
-	TxPower      float64 `json:"tx_power"`       // > 0   — TX power (dBm)
-	TxGain       float64 `json:"tx_gain"`        // >= 0  — TX antenna gain (dB), default 1
-	FrequencyMHz float64 `json:"frequency_mhz"`  // [20, 30000] — operating frequency (MHz), default 905
+	Lat          float64 `json:"lat"`           // [-90, 90]  — transmitter latitude (degrees)
+	Lon          float64 `json:"lon"`           // [-180, 180] — transmitter longitude (degrees)
+	TxHeight     float64 `json:"tx_height"`     // >= 1  — TX height above ground (m), default 1
+	TxPower      float64 `json:"tx_power"`      // > 0   — TX power (dBm)
+	TxGain       float64 `json:"tx_gain"`       // >= 0  — TX antenna gain (dB), default 1
+	FrequencyMHz float64 `json:"frequency_mhz"` // [20, 30000] — operating frequency (MHz), default 905
 
 	// Receiver parameters.
 	RxHeight        float64 `json:"rx_height"`        // >= 1 — RX height above ground (m), default 1
@@ -74,8 +74,8 @@ type CoveragePredictionRequest struct {
 	MaxDbm   float64 `json:"max_dbm"`  // colormap maximum dBm, default 0
 
 	// Terrain options.
-	HighResolution         bool `json:"high_resolution"`            // use 30 m DEM tiles instead of 90 m, default false
-	DeltaHPoints           int  `json:"delta_h_points"`             // >= 0 — ITM delta-H interpolation points, default 0
+	HighResolution         bool `json:"high_resolution"`             // use 30 m DEM tiles instead of 90 m, default false
+	DeltaHPoints           int  `json:"delta_h_points"`              // >= 0 — ITM delta-H interpolation points, default 0
 	FastDeltaHEveryNPoints *int `json:"fast_delta_h_every_n_points"` // >= 0 — ITM fast delta-H interval (0 disables), default 50
 
 	// Propagation model.

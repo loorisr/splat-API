@@ -29,7 +29,7 @@ type Splat struct {
 	bucketNameHighResolution string
 	maxConcurrentJobs        int
 	jobTimeout               time.Duration
-	semaphore                chan struct{}          // limits concurrent signalserver processes
+	semaphore                chan struct{} // limits concurrent signalserver processes
 	demLocksMu               sync.Mutex
 	demLocks                 map[string]*sync.Mutex // per-tile download locks
 }
@@ -52,9 +52,9 @@ func NewSplat(binaryPath, demDir, antennaDir string) *Splat {
 		binaryPath:               binaryPath,
 		demDir:                   demDir,
 		antennaDir:               antennaDir,
-		bucketName:               "copernicus-dem-90m",       // standard 3-arcsecond / 90 m tiles
-		bucketNameHighResolution: "copernicus-dem-30m",      // optional 1-arcsecond / 30 m tiles
-		maxConcurrentJobs:        1,                          // signalserver is CPU/memory heavy
+		bucketName:               "copernicus-dem-90m", // standard 3-arcsecond / 90 m tiles
+		bucketNameHighResolution: "copernicus-dem-30m", // optional 1-arcsecond / 30 m tiles
+		maxConcurrentJobs:        1,                    // signalserver is CPU/memory heavy
 		jobTimeout:               120 * time.Second,
 		semaphore:                make(chan struct{}, 1),
 		demLocks:                 make(map[string]*sync.Mutex),
